@@ -63,5 +63,48 @@ services:
       - "8000:8000"
     restart: on-failure
 
+  redis:
+    image: redis:7-alpine
+    restart: on-failure
+
+  flower:
+    image: mher/flower:2.0.1
+    depends_on:
+      - redis
+      - celery-worker
+    command: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555"]
+    environment:
+      FLOWER_UNAUTHENTICATED_API: "true"
+    ports:
+      - "5555:5555"
+    restart: on-failure
+
+  celery-worker:
+    image: meetgeek-celery-worker
+    build:
+      context: .
+      dockerfile: implementations/celery/worker/Dockerfile
+    depends_on:
+      - redis
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    restart: on-failure
+
+  celery-client:
+    image: meetgeek-celery-client
+    build:
+      context: .
+      dockerfile: implementations/celery/client/Dockerfile
+    depends_on:
+      - redis
+      - celery-worker
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "8001:8000"
+    restart: on-failure
+
 volumes:
   temporal-postgres:

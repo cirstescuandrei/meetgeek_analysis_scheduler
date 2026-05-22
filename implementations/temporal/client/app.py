@@ -14,7 +14,7 @@ from implementations.temporal.workflows import MeetingAnalysisWorkflow
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.temporal = await Client.connect(
-        os.getenv("TEMPORAL_ADDRESS", "localhost:7233")
+        os.getenv("TEMPORAL_ADDRESS", "temporal:7233")
     )
     yield
 

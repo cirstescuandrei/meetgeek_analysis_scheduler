@@ -26,7 +26,7 @@ from implementations.temporal.workflows import MeetingAnalysisWorkflow
 
 async def main() -> None:
     client = await Client.connect(os.getenv("TEMPORAL_ADDRESS", "localhost:7233"))
-    with ThreadPoolExecutor(max_workers=100) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         worker = Worker(
             client,
             task_queue=TASK_QUEUE,
