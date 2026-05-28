@@ -14,19 +14,47 @@ services:
       timeout: 5s
       retries: 10
 
+  temporal-archival-init:
+    image: busybox
+    command: ["sh", "-c", "chown 1000:1000 /archival"]
+    volumes:
+      - temporal-archival:/archival
+
   temporal:
     image: temporalio/auto-setup:1.29.6
     depends_on:
       postgresql:
         condition: service_healthy
+      temporal-archival-init:
+        condition: service_completed_successfully
     environment:
       DB: postgres12
       DB_PORT: 5432
       POSTGRES_USER: temporal
       POSTGRES_PWD: temporal
       POSTGRES_SEEDS: postgresql
+      PROMETHEUS_ENDPOINT: 0.0.0.0:9091
+    volumes:
+      - temporal-archival:/archival
     ports:
       - "7233:7233"
+
+  temporal-archival-setup:
+    image: temporalio/auto-setup:1.29.6
+    depends_on:
+      - temporal
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until temporal operator namespace describe --address temporal:7233 -n default >/dev/null 2>&1; do
+          echo "waiting for temporal frontend..."; sleep 2;
+        done
+        if temporal operator namespace describe --address temporal:7233 -n default 2>/dev/null | grep -qE "HistoryArchivalState +Enabled"; then
+          echo "archival already enabled on default namespace"; exit 0;
+        fi
+        temporal operator namespace update --address temporal:7233 -n default \
+          --history-archival-state enabled --history-uri file:///archival/history \
+          --visibility-archival-state enabled --visibility-uri file:///archival/visibility
 
   temporal-ui:
     image: temporalio/ui:2.50.0
@@ -47,6 +75,7 @@ services:
       - temporal
     environment:
       TEMPORAL_ADDRESS: temporal:7233
+      METRICS_ADDRESS: 0.0.0.0:9000
     restart: on-failure
 
   client:
@@ -106,5 +135,37 @@ services:
       - "8001:8000"
     restart: on-failure
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    depends_on:
+      - temporal
+      - worker
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    restart: on-failure
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    restart: on-failure
+
 volumes:
   temporal-postgres:
+  temporal-archival:
+  prometheus-data:
+  grafana-data:

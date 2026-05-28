@@ -46,7 +46,7 @@ class MeetingAnalysisWorkflow:
         infer_speakers_task = asyncio.create_task(act(unknown_speaker_inference))
         template_task = asyncio.create_task(act(template))
 
-        # 4. depend on infer_speakers + template (not on )
+        # 4. depend on infer_speakers + template
         await asyncio.gather(
             vector_store_task,
             infer_speakers_task,

@@ -3,6 +3,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor
 
 from temporalio.client import Client
+from temporalio.runtime import PrometheusConfig, Runtime, TelemetryConfig
 from temporalio.worker import Worker
 
 from implementations.temporal.activities import (
@@ -25,8 +26,17 @@ from implementations.temporal.workflows import MeetingAnalysisWorkflow
 
 
 async def main() -> None:
-    client = await Client.connect(os.getenv("TEMPORAL_ADDRESS", "localhost:7233"))
-    with ThreadPoolExecutor(max_workers=1) as executor:
+    runtime = Runtime(
+        telemetry=TelemetryConfig(
+            metrics=PrometheusConfig(
+                bind_address=os.getenv("METRICS_ADDRESS", "0.0.0.0:9000")
+            )
+        )
+    )
+    client = await Client.connect(
+        os.getenv("TEMPORAL_ADDRESS", "localhost:7233"), runtime=runtime
+    )
+    with ThreadPoolExecutor(max_workers=100) as executor:
         worker = Worker(
             client,
             task_queue=TASK_QUEUE,
