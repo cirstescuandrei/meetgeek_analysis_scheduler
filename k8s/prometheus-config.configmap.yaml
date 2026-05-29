@@ -1,0 +1,19 @@
+apiVersion: v1
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 5s
+      evaluation_interval: 5s
+
+    scrape_configs:
+      - job_name: temporal-server
+        static_configs:
+          - targets: ["temporal:9091"]
+
+      - job_name: temporal-worker
+        static_configs:
+          - targets: ["temporal-worker:9000"]
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: meetgeek

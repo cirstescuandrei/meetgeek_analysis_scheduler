@@ -1,0 +1,187 @@
+apiVersion: v1
+data:
+  meeting-analysis.json: |
+    {
+      "uid": "meeting-analysis",
+      "title": "Meeting Analysis - Temporal Workflows",
+      "tags": ["temporal", "meetgeek"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "5s",
+      "time": { "from": "now-1h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "workflow_type",
+            "label": "Workflow",
+            "type": "query",
+            "datasource": { "type": "prometheus", "uid": "prometheus" },
+            "query": "label_values(temporal_workflow_endtoend_latency_count, workflow_type)",
+            "refresh": 2,
+            "includeAll": false,
+            "current": { "text": "MeetingAnalysisWorkflow", "value": "MeetingAnalysisWorkflow" }
+          }
+        ]
+      },
+      "panels": [
+        {
+          "type": "row",
+          "title": "Overview",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+          "id": 100
+        },
+        {
+          "type": "stat",
+          "title": "Started (total)",
+          "id": 1,
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(action{action_type=\"grpc_StartWorkflowExecution\", namespace=\"default\"})", "instant": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Completed (total)",
+          "id": 2,
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(temporal_workflow_completed{workflow_type=\"$workflow_type\"})", "instant": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Failed (total)",
+          "id": 3,
+          "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(temporal_workflow_failed{workflow_type=\"$workflow_type\"}) or vector(0)", "instant": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Success rate",
+          "id": 4,
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "100 * sum(temporal_workflow_completed{workflow_type=\"$workflow_type\"}) / (sum(temporal_workflow_completed{workflow_type=\"$workflow_type\"}) + (sum(temporal_workflow_failed{workflow_type=\"$workflow_type\"}) or vector(0)))", "instant": true }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Throughput & Latency",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+          "id": 101
+        },
+        {
+          "type": "timeseries",
+          "title": "Workflow throughput (per sec)",
+          "id": 5,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(action{action_type=\"grpc_StartWorkflowExecution\", namespace=\"default\"}[1m]))", "legendFormat": "started", "range": true },
+            { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(temporal_workflow_completed{workflow_type=\"$workflow_type\"}[1m]))", "legendFormat": "completed", "range": true },
+            { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(temporal_workflow_failed{workflow_type=\"$workflow_type\"}[1m]))", "legendFormat": "failed", "range": true }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Workflow end-to-end latency",
+          "id": 6,
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.50, sum(rate(temporal_workflow_endtoend_latency_bucket{workflow_type=\"$workflow_type\"}[5m])) by (le))", "legendFormat": "p50", "range": true },
+            { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_workflow_endtoend_latency_bucket{workflow_type=\"$workflow_type\"}[5m])) by (le))", "legendFormat": "p95", "range": true },
+            { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.99, sum(rate(temporal_workflow_endtoend_latency_bucket{workflow_type=\"$workflow_type\"}[5m])) by (le))", "legendFormat": "p99", "range": true }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Activities",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+          "id": 102
+        },
+        {
+          "type": "timeseries",
+          "title": "Activity avg execution latency by type",
+          "id": 7,
+          "gridPos": { "h": 9, "w": 12, "x": 0, "y": 15 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 0 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(temporal_activity_execution_latency_sum{workflow_type=\"$workflow_type\"}[5m])) by (activity_type) / sum(rate(temporal_activity_execution_latency_count{workflow_type=\"$workflow_type\"}[5m])) by (activity_type)", "legendFormat": "{{activity_type}}", "range": true }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Activity p95 execution latency by type",
+          "id": 8,
+          "gridPos": { "h": 9, "w": 12, "x": 12, "y": 15 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 0 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_activity_execution_latency_bucket{workflow_type=\"$workflow_type\"}[5m])) by (le, activity_type))", "legendFormat": "{{activity_type}}", "range": true }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Activity failures by type (per sec)",
+          "id": 9,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(temporal_activity_execution_failed{workflow_type=\"$workflow_type\"}[5m])) by (activity_type)", "legendFormat": "{{activity_type}}", "range": true }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Worker task slots in use",
+          "id": 10,
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(temporal_worker_task_slots_used{task_queue=\"meeting-analysis\"}) by (worker_type)", "legendFormat": "{{worker_type}}", "range": true }
+          ]
+        },
+        {
+          "type": "timeseries",
+          "title": "Activity schedule-to-start latency (p95)",
+          "id": 11,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_activity_schedule_to_start_latency_bucket{task_queue=\"meeting-analysis\"}[5m])) by (le))", "legendFormat": "p95 schedule-to-start", "range": true }
+          ]
+        }
+      ]
+    }
+kind: ConfigMap
+metadata:
+  name: grafana-dashboards
+  namespace: meetgeek

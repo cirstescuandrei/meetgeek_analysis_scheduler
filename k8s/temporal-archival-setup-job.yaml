@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temporal-archival-setup
+  namespace: meetgeek
+spec:
+  backoffLimit: 30
+  template:
+    metadata:
+      labels:
+        app: temporal-archival-setup
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: setup
+          image: temporalio/auto-setup:1.29.6
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              until temporal operator namespace describe --address temporal:7233 -n default >/dev/null 2>&1; do
+                echo "waiting for temporal frontend..."; sleep 2;
+              done
+              if temporal operator namespace describe --address temporal:7233 -n default 2>/dev/null | grep -qE "HistoryArchivalState +Enabled"; then
+                echo "archival already enabled on default namespace"; exit 0;
+              fi
+              temporal operator namespace update --address temporal:7233 -n default \
+                --history-archival-state enabled --history-uri file:///archival/history \
+                --visibility-archival-state enabled --visibility-uri file:///archival/visibility

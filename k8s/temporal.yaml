@@ -1,0 +1,84 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: temporal-archival
+  namespace: meetgeek
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal
+  namespace: meetgeek
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: temporal
+  template:
+    metadata:
+      labels:
+        app: temporal
+    spec:
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z postgresql 5432; do echo waiting for postgres; sleep 2; done"]
+      containers:
+        - name: temporal
+          image: temporalio/auto-setup:1.29.6
+          env:
+            - name: DB
+              value: postgres12
+            - name: DB_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              value: temporal
+            - name: POSTGRES_PWD
+              value: temporal
+            - name: POSTGRES_SEEDS
+              value: postgresql
+            - name: PROMETHEUS_ENDPOINT
+              value: 0.0.0.0:9091
+          ports:
+            - name: grpc
+              containerPort: 7233
+            - name: metrics
+              containerPort: 9091
+          volumeMounts:
+            - name: archival
+              mountPath: /archival
+          readinessProbe:
+            tcpSocket:
+              port: 7233
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+      volumes:
+        - name: archival
+          persistentVolumeClaim:
+            claimName: temporal-archival
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temporal
+  namespace: meetgeek
+spec:
+  selector:
+    app: temporal
+  ports:
+    - name: grpc
+      port: 7233
+      targetPort: 7233
+    - name: metrics
+      port: 9091
+      targetPort: 9091
