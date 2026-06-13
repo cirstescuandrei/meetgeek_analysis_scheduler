@@ -178,6 +178,50 @@ data:
           "targets": [
             { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_activity_schedule_to_start_latency_bucket{task_queue=\"meeting-analysis\"}[5m])) by (le))", "legendFormat": "p95 schedule-to-start", "range": true }
           ]
+        },
+        {
+          "type": "row",
+          "title": "Worker scaling (KEDA)",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+          "id": 103
+        },
+        {
+          "type": "timeseries",
+          "title": "temporal-worker replicas",
+          "id": 12,
+          "gridPos": { "h": 8, "w": 18, "x": 0, "y": 41 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"temporal-worker\"}", "legendFormat": "desired", "range": true },
+            { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"temporal-worker\"}", "legendFormat": "current", "range": true },
+            { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"temporal-worker\"}", "legendFormat": "available", "range": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "Replicas now",
+          "id": 13,
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 41 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"temporal-worker\"}", "instant": true }
+          ]
+        },
+        {
+          "type": "stat",
+          "title": "HPA target metric",
+          "id": 14,
+          "gridPos": { "h": 4, "w": 6, "x": 18, "y": 45 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] } }, "overrides": [] },
+          "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(increase(action{action_type=\"grpc_StartWorkflowExecution\",namespace=\"default\"}[1m]))", "instant": true }
+          ]
         }
       ]
     }
