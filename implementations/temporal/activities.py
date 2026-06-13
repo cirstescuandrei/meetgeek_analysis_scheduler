@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from temporalio import activity
 
-from meetgeek.sdk import MeetGeekSDK
+from meetgeek.sdk import AsyncMeetGeekSDK, MeetGeekSDK
 
 
 @dataclass
@@ -74,3 +74,68 @@ def kpis_summary() -> None:
 @activity.defn
 def meeting_workflows() -> None:
     MeetGeekSDK.run_meeting_workflows()
+
+
+@activity.defn
+async def async_transcript() -> None:
+    await AsyncMeetGeekSDK.run_transcript()
+
+
+@activity.defn
+async def async_speaker_diarization() -> None:
+    await AsyncMeetGeekSDK.run_speaker_diarization()
+
+
+@activity.defn
+async def async_language() -> None:
+    await AsyncMeetGeekSDK.run_language_identification()
+
+
+@activity.defn
+async def async_silence() -> None:
+    await AsyncMeetGeekSDK.run_silence_intervals()
+
+
+@activity.defn
+async def async_vector_store() -> None:
+    await AsyncMeetGeekSDK.run_update_vector_store()
+
+
+@activity.defn
+async def async_unknown_speaker_inference() -> None:
+    await AsyncMeetGeekSDK.run_infer_unknown_speakers()
+
+
+@activity.defn
+async def async_template() -> None:
+    await AsyncMeetGeekSDK.run_template()
+
+
+@activity.defn
+async def async_summary() -> None:
+    await AsyncMeetGeekSDK.run_summary()
+
+
+@activity.defn
+async def async_topics_with_highlights() -> None:
+    await AsyncMeetGeekSDK.run_topics_and_highlights()
+
+
+@activity.defn
+async def async_keyword_highlights() -> None:
+    await AsyncMeetGeekSDK.run_keyword_highlights()
+
+
+@activity.defn
+async def async_kpis() -> None:
+    await AsyncMeetGeekSDK.run_kpis()
+
+
+@activity.defn
+async def async_kpis_summary() -> None:
+    await AsyncMeetGeekSDK.run_kpis_summary()
+
+
+@activity.defn
+async def async_meeting_workflows() -> None:
+    await AsyncMeetGeekSDK.run_meeting_workflows()

@@ -38,7 +38,7 @@ for entry in "${selected[@]}"; do
   echo ">> building $image:latest"
   docker build -f "$dockerfile" -t "$image:latest" .
   echo ">> loading $image:latest into minikube"
-  minikube image load "$image:latest"
+  docker save "$image:latest" | docker exec -i minikube docker load
   echo ">> restarting deployment/$deployment"
   kubectl rollout restart "deployment/$deployment" -n "$NAMESPACE"
 done

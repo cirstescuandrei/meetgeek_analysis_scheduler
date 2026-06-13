@@ -20,9 +20,25 @@ from implementations.temporal.activities import (
     topics_with_highlights,
     transcript,
     vector_store,
+    async_unknown_speaker_inference,
+    async_keyword_highlights,
+    async_kpis,
+    async_kpis_summary,
+    async_language,
+    async_meeting_workflows,
+    async_silence,
+    async_speaker_diarization,
+    async_summary,
+    async_template,
+    async_topics_with_highlights,
+    async_transcript,
+    async_vector_store,
 )
 from implementations.temporal.shared import TASK_QUEUE
-from implementations.temporal.workflows import MeetingAnalysisWorkflow
+from implementations.temporal.workflows import (
+    AsyncMeetingAnalysisWorkflow,
+    MeetingAnalysisWorkflow,
+)
 
 
 async def main() -> None:
@@ -40,7 +56,7 @@ async def main() -> None:
         worker = Worker(
             client,
             task_queue=TASK_QUEUE,
-            workflows=[MeetingAnalysisWorkflow],
+            workflows=[MeetingAnalysisWorkflow, AsyncMeetingAnalysisWorkflow],
             activities=[
                 transcript,
                 speaker_diarization,
@@ -55,6 +71,19 @@ async def main() -> None:
                 kpis,
                 kpis_summary,
                 meeting_workflows,
+                async_transcript,
+                async_speaker_diarization,
+                async_language,
+                async_silence,
+                async_vector_store,
+                async_unknown_speaker_inference,
+                async_template,
+                async_summary,
+                async_topics_with_highlights,
+                async_keyword_highlights,
+                async_kpis,
+                async_kpis_summary,
+                async_meeting_workflows,
             ],
             activity_executor=executor,
         )

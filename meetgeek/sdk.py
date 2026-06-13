@@ -7,6 +7,14 @@ def jitter(value=5.0, pct=0.5):
     return value * random.uniform(1 - pct, 1 + pct)
 
 
+def byzantine(chance=0.1):
+    if chance < 0.0:
+        chance = 0.0
+    if chance > 1.0:
+        chance = 1.0
+    
+
+
 class MeetGeekSDK:
     """Mock client for the MeetGeek API"""
 
