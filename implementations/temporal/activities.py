@@ -77,26 +77,6 @@ def meeting_workflows() -> None:
 
 
 @activity.defn
-async def async_transcript() -> None:
-    await AsyncMeetGeekSDK.run_transcript()
-
-
-@activity.defn
-async def async_speaker_diarization() -> None:
-    await AsyncMeetGeekSDK.run_speaker_diarization()
-
-
-@activity.defn
-async def async_language() -> None:
-    await AsyncMeetGeekSDK.run_language_identification()
-
-
-@activity.defn
-async def async_silence() -> None:
-    await AsyncMeetGeekSDK.run_silence_intervals()
-
-
-@activity.defn
 async def async_vector_store() -> None:
     await AsyncMeetGeekSDK.run_update_vector_store()
 

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: temporal-transcriber
+  namespace: meetgeek
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: temporal-transcriber
+  template:
+    metadata:
+      labels:
+        app: temporal-transcriber
+    spec:
+      initContainers:
+        - name: wait-for-temporal
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z temporal 7233; do echo waiting for temporal; sleep 2; done"]
+      containers:
+        - name: temporal-transcriber
+          image: meetgeek-temporal-transcriber:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: TEMPORAL_ADDRESS
+              value: temporal:7233
+            - name: METRICS_ADDRESS
+              value: 0.0.0.0:9000
+          ports:
+            - name: metrics
+              containerPort: 9000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: temporal-transcriber
+  namespace: meetgeek
+spec:
+  selector:
+    app: temporal-transcriber
+  ports:
+    - name: metrics
+      port: 9000
+      targetPort: 9000

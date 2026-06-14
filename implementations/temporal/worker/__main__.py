@@ -11,27 +11,19 @@ from implementations.temporal.activities import (
     keyword_highlights,
     kpis,
     kpis_summary,
-    language,
     meeting_workflows,
-    silence,
-    speaker_diarization,
     summary,
     template,
     topics_with_highlights,
-    transcript,
     vector_store,
     async_unknown_speaker_inference,
     async_keyword_highlights,
     async_kpis,
     async_kpis_summary,
-    async_language,
     async_meeting_workflows,
-    async_silence,
-    async_speaker_diarization,
     async_summary,
     async_template,
     async_topics_with_highlights,
-    async_transcript,
     async_vector_store,
 )
 from implementations.temporal.shared import TASK_QUEUE
@@ -39,6 +31,8 @@ from implementations.temporal.workflows import (
     AsyncMeetingAnalysisWorkflow,
     MeetingAnalysisWorkflow,
 )
+
+MAX_CONCURRENT_ACTIVITIES = 50
 
 
 async def main() -> None:
@@ -52,16 +46,12 @@ async def main() -> None:
     client = await Client.connect(
         os.getenv("TEMPORAL_ADDRESS", "localhost:7233"), runtime=runtime
     )
-    with ThreadPoolExecutor(max_workers=100) as executor:
+    with ThreadPoolExecutor(max_workers=MAX_CONCURRENT_ACTIVITIES) as executor:
         worker = Worker(
             client,
             task_queue=TASK_QUEUE,
             workflows=[MeetingAnalysisWorkflow, AsyncMeetingAnalysisWorkflow],
             activities=[
-                transcript,
-                speaker_diarization,
-                language,
-                silence,
                 vector_store,
                 unknown_speaker_inference,
                 template,
@@ -71,10 +61,6 @@ async def main() -> None:
                 kpis,
                 kpis_summary,
                 meeting_workflows,
-                async_transcript,
-                async_speaker_diarization,
-                async_language,
-                async_silence,
                 async_vector_store,
                 async_unknown_speaker_inference,
                 async_template,
@@ -86,6 +72,7 @@ async def main() -> None:
                 async_meeting_workflows,
             ],
             activity_executor=executor,
+            max_concurrent_activities=MAX_CONCURRENT_ACTIVITIES,
         )
         await worker.run()
 

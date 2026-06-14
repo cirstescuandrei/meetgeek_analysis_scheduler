@@ -154,26 +154,26 @@
     },
     {
       "type": "timeseries",
-      "title": "Worker task slots in use",
+      "title": "Task slots in use (by queue / type)",
       "id": 10,
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
-        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(temporal_worker_task_slots_used{task_queue=\"meeting-analysis\"}) by (worker_type)", "legendFormat": "{{worker_type}}", "range": true }
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(temporal_worker_task_slots_used{task_queue=~\"meeting-.*\"}) by (worker_type, task_queue)", "legendFormat": "{{task_queue}} / {{worker_type}}", "range": true }
       ]
     },
     {
       "type": "timeseries",
-      "title": "Activity schedule-to-start latency (p95)",
+      "title": "Activity schedule-to-start latency (p95) by queue",
       "id": 11,
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "ms", "custom": { "drawStyle": "line", "fillOpacity": 5 } }, "overrides": [] },
       "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
       "targets": [
-        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_activity_schedule_to_start_latency_bucket{task_queue=\"meeting-analysis\"}[5m])) by (le))", "legendFormat": "p95 schedule-to-start", "range": true }
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum(rate(temporal_activity_schedule_to_start_latency_bucket{task_queue=~\"meeting-.*\"}[5m])) by (le, task_queue))", "legendFormat": "{{task_queue}}", "range": true }
       ]
     },
     {
@@ -198,7 +198,7 @@
     },
     {
       "type": "stat",
-      "title": "Replicas now",
+      "title": "Worker replicas now",
       "id": 13,
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 41 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -210,14 +210,58 @@
     },
     {
       "type": "stat",
-      "title": "HPA target metric",
+      "title": "Worker HPA target",
       "id": 14,
       "gridPos": { "h": 4, "w": 6, "x": 18, "y": 45 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
-      "fieldConfig": { "defaults": { "unit": "short", "decimals": 1, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 5 }, { "color": "red", "value": 20 }] } }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] } }, "overrides": [] },
       "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "targets": [
-        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(increase(action{action_type=\"grpc_StartWorkflowExecution\",namespace=\"default\"}[1m]))", "instant": true }
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-temporal-worker\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Transcriber scaling (KEDA)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "id": 104
+    },
+    {
+      "type": "timeseries",
+      "title": "temporal-transcriber replicas",
+      "id": 15,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 50 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"temporal-transcriber\"}", "legendFormat": "desired", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"temporal-transcriber\"}", "legendFormat": "current", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"temporal-transcriber\"}", "legendFormat": "available", "range": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Transcriber replicas now",
+      "id": 16,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 50 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"temporal-transcriber\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Transcriber HPA target",
+      "id": 17,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 54 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 4 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-temporal-transcriber\"}", "instant": true }
       ]
     }
   ]

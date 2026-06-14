@@ -23,16 +23,13 @@ with workflow.unsafe.imports_passed_through():
         async_keyword_highlights,
         async_kpis,
         async_kpis_summary,
-        async_language,
         async_meeting_workflows,
-        async_silence,
-        async_speaker_diarization,
         async_summary,
         async_template,
         async_topics_with_highlights,
-        async_transcript,
         async_vector_store,
     )
+    from implementations.temporal.shared import TRANSCRIBER_TASK_QUEUE
 
 TIMEOUT = timedelta(minutes=5)
 
@@ -41,17 +38,21 @@ TIMEOUT = timedelta(minutes=5)
 class MeetingAnalysisWorkflow:
     @workflow.run
     async def run(self, meeting: MeetingInput) -> None:
-        def act(fn):
+        def act(fn, queue=None):
+            if queue:
+                return workflow.execute_activity(
+                    fn, start_to_close_timeout=TIMEOUT, task_queue=queue
+                )
             return workflow.execute_activity(fn, start_to_close_timeout=TIMEOUT)
 
-        # 1. transcript
-        await act(transcript)
+        # 1. transcript (transcriber queue)
+        await act(transcript, queue=TRANSCRIBER_TASK_QUEUE)
 
-        # 2. depend on transcript
+        # 2. depend on transcript (transcriber queue)
         await asyncio.gather(
-            act(speaker_diarization),
-            act(language),
-            act(silence),
+            act(speaker_diarization, queue=TRANSCRIBER_TASK_QUEUE),
+            act(language, queue=TRANSCRIBER_TASK_QUEUE),
+            act(silence, queue=TRANSCRIBER_TASK_QUEUE),
         )
 
         # 3. depend on speakers + language + silence
@@ -88,17 +89,21 @@ class MeetingAnalysisWorkflow:
 class AsyncMeetingAnalysisWorkflow:
     @workflow.run
     async def run(self, meeting: MeetingInput) -> None:
-        def act(fn):
+        def act(fn, queue=None):
+            if queue:
+                return workflow.execute_activity(
+                    fn, start_to_close_timeout=TIMEOUT, task_queue=queue
+                )
             return workflow.execute_activity(fn, start_to_close_timeout=TIMEOUT)
 
-        # 1. transcript
-        await act(async_transcript)
+        # 1. transcript (sync, transcriber queue)
+        await act(transcript, queue=TRANSCRIBER_TASK_QUEUE)
 
-        # 2. depend on transcript
+        # 2. depend on transcript (sync, transcriber queue)
         await asyncio.gather(
-            act(async_speaker_diarization),
-            act(async_language),
-            act(async_silence),
+            act(speaker_diarization, queue=TRANSCRIBER_TASK_QUEUE),
+            act(language, queue=TRANSCRIBER_TASK_QUEUE),
+            act(silence, queue=TRANSCRIBER_TASK_QUEUE),
         )
 
         # 3. depend on speakers + language + silence

@@ -8,6 +8,7 @@ NAMESPACE=meetgeek
 SERVICES=(
   "meetgeek-temporal-worker|implementations/temporal/worker/Dockerfile|temporal-worker"
   "meetgeek-temporal-client|implementations/temporal/client/Dockerfile|temporal-client"
+  "meetgeek-temporal-transcriber|implementations/temporal/transcriber/Dockerfile|temporal-transcriber"
   "meetgeek-celery-worker|implementations/celery/worker/Dockerfile|celery-worker"
   "meetgeek-celery-client|implementations/celery/client/Dockerfile|celery-client"
 )

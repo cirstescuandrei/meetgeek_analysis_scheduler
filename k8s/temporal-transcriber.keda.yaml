@@ -1,11 +1,11 @@
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
-  name: temporal-worker
+  name: temporal-transcriber
   namespace: meetgeek
 spec:
   scaleTargetRef:
-    name: temporal-worker
+    name: temporal-transcriber
   minReplicaCount: 1
   maxReplicaCount: 5
   advanced:
@@ -28,7 +28,7 @@ spec:
       metadata:
         endpoint: temporal.meetgeek.svc.cluster.local:7233
         namespace: default
-        taskQueue: meeting-analysis
-        queueTypes: workflow,activity
-        targetQueueSize: "100"
-        activationTargetQueueSize: "10"
+        taskQueue: meeting-transcription
+        queueTypes: activity
+        targetQueueSize: "4"
+        activationTargetQueueSize: "1"
