@@ -32,7 +32,7 @@ from implementations.temporal.workflows import (
     MeetingAnalysisWorkflow,
 )
 
-MAX_CONCURRENT_ACTIVITIES = 50
+MAX_CONCURRENT_ACTIVITIES = 20
 
 
 async def main() -> None:

@@ -1,0 +1,241 @@
+{
+  "uid": "meeting-analysis-celery",
+  "title": "Meeting Analysis - Celery Tasks",
+  "tags": ["celery", "meetgeek"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Overview",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 100
+    },
+    {
+      "type": "stat",
+      "title": "Started (total)",
+      "id": 1,
+      "gridPos": { "h": 4, "w": 6, "x": 0, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(celery_task_received_total{name=\"implementations.celery.tasks.transcript\"})", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Completed (total)",
+      "id": 2,
+      "gridPos": { "h": 4, "w": 6, "x": 6, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(celery_task_succeeded_total{name=\"implementations.celery.tasks.meeting_workflows\"})", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Failed (total)",
+      "id": 3,
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(celery_task_failed_total) or vector(0)", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Success rate",
+      "id": 4,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 1 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 99 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "100 * sum(celery_task_succeeded_total{name=\"implementations.celery.tasks.meeting_workflows\"}) / sum(celery_task_received_total{name=\"implementations.celery.tasks.transcript\"})", "instant": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Throughput",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "id": 101
+    },
+    {
+      "type": "timeseries",
+      "title": "Workflow throughput (per sec)",
+      "id": 5,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(celery_task_received_total{name=\"implementations.celery.tasks.transcript\"}[1m]))", "legendFormat": "started", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(celery_task_succeeded_total{name=\"implementations.celery.tasks.meeting_workflows\"}[1m]))", "legendFormat": "completed", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum(rate(celery_task_failed_total[1m]))", "legendFormat": "failed", "range": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Tasks",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 14 },
+      "id": 102
+    },
+    {
+      "type": "timeseries",
+      "title": "Task avg runtime by type",
+      "id": 6,
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (task) (label_replace(rate(celery_task_runtime_sum[5m]), \"task\", \"$1\", \"name\", \".*\\\\.(.+)\")) / sum by (task) (label_replace(rate(celery_task_runtime_count[5m]), \"task\", \"$1\", \"name\", \".*\\\\.(.+)\"))", "legendFormat": "{{task}}", "range": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Task p95 runtime by type",
+      "id": 7,
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 15 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s", "custom": { "drawStyle": "line", "fillOpacity": 0 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["max"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "histogram_quantile(0.95, sum by (le, task) (label_replace(rate(celery_task_runtime_bucket[5m]), \"task\", \"$1\", \"name\", \".*\\\\.(.+)\")))", "legendFormat": "{{task}}", "range": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Task failures by type (per sec)",
+      "id": 8,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ops", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (task) (label_replace(rate(celery_task_failed_total[5m]), \"task\", \"$1\", \"name\", \".*\\\\.(.+)\"))", "legendFormat": "{{task}}", "range": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Active tasks per worker pod",
+      "id": 9,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "celery_worker_tasks_active", "legendFormat": "{{hostname}}", "range": true }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Queue length (Redis backlog) by queue",
+      "id": 10,
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "celery_queue_length{queue_name=~\"meeting-.*\"}", "legendFormat": "{{queue_name}}", "range": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Worker scaling (KEDA)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 40 },
+      "id": 103
+    },
+    {
+      "type": "timeseries",
+      "title": "celery-worker replicas",
+      "id": 11,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 41 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "desired", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "current", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "available", "range": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Worker replicas now",
+      "id": 12,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 41 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Worker HPA target",
+      "id": 13,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 45 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-worker\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Transcriber scaling (KEDA)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 49 },
+      "id": 104
+    },
+    {
+      "type": "timeseries",
+      "title": "celery-transcriber replicas",
+      "id": 14,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 50 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "desired", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "current", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "available", "range": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Transcriber replicas now",
+      "id": 15,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 50 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Transcriber HPA target",
+      "id": 16,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 54 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 4 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-transcriber\"}", "instant": true }
+      ]
+    }
+  ]
+}

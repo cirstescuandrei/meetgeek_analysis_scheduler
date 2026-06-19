@@ -1,0 +1,33 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: celery-transcriber
+  namespace: meetgeek
+spec:
+  scaleTargetRef:
+    name: celery-transcriber
+  minReplicaCount: 1
+  maxReplicaCount: 5
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleUp:
+          stabilizationWindowSeconds: 0
+          policies:
+            - type: Pods
+              value: 2
+              periodSeconds: 15
+        scaleDown:
+          stabilizationWindowSeconds: 60
+          policies:
+            - type: Pods
+              value: 1
+              periodSeconds: 30
+  triggers:
+    - type: redis
+      metadata:
+        address: redis.meetgeek.svc.cluster.local:6379
+        listName: meeting-transcription
+        listLength: "4"
+        activationListLength: "1"
+        databaseIndex: "0"

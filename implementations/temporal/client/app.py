@@ -32,18 +32,23 @@ app = FastAPI(lifespan=lifespan)
 
 
 class AnalyzeRequest(BaseModel):
-    meeting_id: str | None = None
-    audio_path: str = "sample.wav"
+    title: str = "untitled"
+    size: int = 0
+    should_fail: bool = False
     mode: Literal["sync", "async"] = "sync"
 
 
 @app.post("/analyze")
 async def analyze(req: AnalyzeRequest, request: Request) -> dict:
     client: Client = request.app.state.temporal
-    meeting_id = req.meeting_id or str(uuid.uuid4())
+    meeting: MeetingInput = {
+        "title": req.title,
+        "size": req.size,
+        "should_fail": req.should_fail,
+    }
     handle = await client.start_workflow(
         WORKFLOWS[req.mode].run,
-        MeetingInput(meeting_id=meeting_id, audio_path=req.audio_path),
+        meeting,
         id=f"meeting-analysis-{req.mode}-{uuid.uuid4()}",
         task_queue=TASK_QUEUE,
     )

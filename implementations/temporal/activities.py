@@ -1,121 +1,121 @@
-from dataclasses import dataclass
+from typing import TypedDict
 
 from temporalio import activity
 
 from meetgeek.sdk import AsyncMeetGeekSDK, MeetGeekSDK
 
 
-@dataclass
-class MeetingInput:
-    meeting_id: str
-    audio_path: str
+class MeetingInput(TypedDict, total=False):
+    title: str
+    size: int
+    should_fail: bool
 
 
 @activity.defn
-def transcript() -> None:
-    MeetGeekSDK.run_transcript()
+def transcript(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_transcript(meeting)
 
 
 @activity.defn
-def speaker_diarization() -> None:
-    MeetGeekSDK.run_speaker_diarization()
+def speaker_diarization(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_speaker_diarization(meeting)
 
 
 @activity.defn
-def language() -> None:
-    MeetGeekSDK.run_language_identification()
+def language(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_language_identification(meeting)
 
 
 @activity.defn
-def silence() -> None:
-    MeetGeekSDK.run_silence_intervals()
+def silence(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_silence_intervals(meeting)
 
 
 @activity.defn
-def vector_store() -> None:
-    MeetGeekSDK.run_update_vector_store()
+def vector_store(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_update_vector_store(meeting)
 
 
 @activity.defn
-def unknown_speaker_inference() -> None:
-    MeetGeekSDK.run_infer_unknown_speakers()
+def unknown_speaker_inference(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_infer_unknown_speakers(meeting)
 
 
 @activity.defn
-def template() -> None:
-    MeetGeekSDK.run_template()
+def template(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_template(meeting)
 
 
 @activity.defn
-def summary() -> None:
-    MeetGeekSDK.run_summary()
+def summary(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_summary(meeting)
 
 
 @activity.defn
-def topics_with_highlights() -> None:
-    MeetGeekSDK.run_topics_and_highlights()
+def topics_with_highlights(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_topics_and_highlights(meeting)
 
 
 @activity.defn
-def keyword_highlights() -> None:
-    MeetGeekSDK.run_keyword_highlights()
+def keyword_highlights(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_keyword_highlights(meeting)
 
 
 @activity.defn
-def kpis() -> None:
-    MeetGeekSDK.run_kpis()
+def kpis(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_kpis(meeting)
 
 
 @activity.defn
-def kpis_summary() -> None:
-    MeetGeekSDK.run_kpis_summary()
+def kpis_summary(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_kpis_summary(meeting)
 
 
 @activity.defn
-def meeting_workflows() -> None:
-    MeetGeekSDK.run_meeting_workflows()
+def meeting_workflows(meeting: MeetingInput) -> None:
+    MeetGeekSDK.run_meeting_workflows(meeting)
 
 
 @activity.defn
-async def async_vector_store() -> None:
-    await AsyncMeetGeekSDK.run_update_vector_store()
+async def async_vector_store(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_update_vector_store(meeting)
 
 
 @activity.defn
-async def async_unknown_speaker_inference() -> None:
-    await AsyncMeetGeekSDK.run_infer_unknown_speakers()
+async def async_unknown_speaker_inference(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_infer_unknown_speakers(meeting)
 
 
 @activity.defn
-async def async_template() -> None:
-    await AsyncMeetGeekSDK.run_template()
+async def async_template(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_template(meeting)
 
 
 @activity.defn
-async def async_summary() -> None:
-    await AsyncMeetGeekSDK.run_summary()
+async def async_summary(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_summary(meeting)
 
 
 @activity.defn
-async def async_topics_with_highlights() -> None:
-    await AsyncMeetGeekSDK.run_topics_and_highlights()
+async def async_topics_with_highlights(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_topics_and_highlights(meeting)
 
 
 @activity.defn
-async def async_keyword_highlights() -> None:
-    await AsyncMeetGeekSDK.run_keyword_highlights()
+async def async_keyword_highlights(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_keyword_highlights(meeting)
 
 
 @activity.defn
-async def async_kpis() -> None:
-    await AsyncMeetGeekSDK.run_kpis()
+async def async_kpis(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_kpis(meeting)
 
 
 @activity.defn
-async def async_kpis_summary() -> None:
-    await AsyncMeetGeekSDK.run_kpis_summary()
+async def async_kpis_summary(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_kpis_summary(meeting)
 
 
 @activity.defn
-async def async_meeting_workflows() -> None:
-    await AsyncMeetGeekSDK.run_meeting_workflows()
+async def async_meeting_workflows(meeting: MeetingInput) -> None:
+    await AsyncMeetGeekSDK.run_meeting_workflows(meeting)

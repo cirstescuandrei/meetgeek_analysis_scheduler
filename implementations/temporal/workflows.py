@@ -2,6 +2,7 @@ import asyncio
 from datetime import timedelta
 
 from temporalio import workflow
+from temporalio.common import RetryPolicy
 
 with workflow.unsafe.imports_passed_through():
     from implementations.temporal.activities import (
@@ -32,6 +33,7 @@ with workflow.unsafe.imports_passed_through():
     from implementations.temporal.shared import TRANSCRIBER_TASK_QUEUE
 
 TIMEOUT = timedelta(minutes=5)
+RETRY_POLICY = RetryPolicy(maximum_attempts=5)
 
 
 @workflow.defn
@@ -41,9 +43,18 @@ class MeetingAnalysisWorkflow:
         def act(fn, queue=None):
             if queue:
                 return workflow.execute_activity(
-                    fn, start_to_close_timeout=TIMEOUT, task_queue=queue
+                    fn,
+                    meeting,
+                    start_to_close_timeout=TIMEOUT,
+                    task_queue=queue,
+                    retry_policy=RETRY_POLICY,
                 )
-            return workflow.execute_activity(fn, start_to_close_timeout=TIMEOUT)
+            return workflow.execute_activity(
+                fn,
+                meeting,
+                start_to_close_timeout=TIMEOUT,
+                retry_policy=RETRY_POLICY,
+            )
 
         # 1. transcript (transcriber queue)
         await act(transcript, queue=TRANSCRIBER_TASK_QUEUE)
@@ -92,9 +103,18 @@ class AsyncMeetingAnalysisWorkflow:
         def act(fn, queue=None):
             if queue:
                 return workflow.execute_activity(
-                    fn, start_to_close_timeout=TIMEOUT, task_queue=queue
+                    fn,
+                    meeting,
+                    start_to_close_timeout=TIMEOUT,
+                    task_queue=queue,
+                    retry_policy=RETRY_POLICY,
                 )
-            return workflow.execute_activity(fn, start_to_close_timeout=TIMEOUT)
+            return workflow.execute_activity(
+                fn,
+                meeting,
+                start_to_close_timeout=TIMEOUT,
+                retry_policy=RETRY_POLICY,
+            )
 
         # 1. transcript (sync, transcriber queue)
         await act(transcript, queue=TRANSCRIBER_TASK_QUEUE)

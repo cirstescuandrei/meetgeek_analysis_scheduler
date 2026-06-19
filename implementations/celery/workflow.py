@@ -17,21 +17,29 @@ from implementations.celery.tasks import (
 )
 
 
-def build_workflow():
+def build_workflow(meeting: dict):
     return chain(
         # 1. transcript
-        transcript.si(),
+        transcript.si(meeting),
         # 2. depend on transcript
-        group(speaker_diarization.si(), language.si(), silence.si()),
+        group(
+            speaker_diarization.si(meeting),
+            language.si(meeting),
+            silence.si(meeting),
+        ),
         # 3. depend on speakers + language + silence
-        group(vector_store.si(), unknown_speaker_inference.si(), template.si()),
+        group(
+            vector_store.si(meeting),
+            unknown_speaker_inference.si(meeting),
+            template.si(meeting),
+        ),
         # 4. depend on level 3; kpis_summary trails kpis without blocking the others
         group(
-            summary.si(),
-            topics_with_highlights.si(),
-            keyword_highlights.si(),
-            chain(kpis.si(), kpis_summary.si()),
+            summary.si(meeting),
+            topics_with_highlights.si(meeting),
+            keyword_highlights.si(meeting),
+            chain(kpis.si(meeting), kpis_summary.si(meeting)),
         ),
         # 5. depend on summary + topics + keywords + kpis_summary
-        meeting_workflows.si(),
+        meeting_workflows.si(meeting),
     )

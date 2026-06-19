@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-exporter
+  namespace: meetgeek
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: celery-exporter
+  template:
+    metadata:
+      labels:
+        app: celery-exporter
+    spec:
+      initContainers:
+        - name: wait-for-redis
+          image: busybox:1.36
+          command: ["sh", "-c", "until nc -z redis 6379; do echo waiting for redis; sleep 2; done"]
+      containers:
+        - name: celery-exporter
+          image: danihodovic/celery-exporter:0.12.2
+          env:
+            - name: CE_BROKER_URL
+              value: redis://redis:6379/0
+          ports:
+            - name: metrics
+              containerPort: 9808
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: celery-exporter
+  namespace: meetgeek
+spec:
+  selector:
+    app: celery-exporter
+  ports:
+    - name: metrics
+      port: 9808
+      targetPort: 9808

@@ -1,5 +1,3 @@
-import uuid
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 
@@ -9,12 +7,17 @@ app = FastAPI()
 
 
 class AnalyzeRequest(BaseModel):
-    meeting_id: str | None = None
-    audio_path: str = "sample.wav"
+    title: str = "untitled"
+    size: int = 0
+    should_fail: bool = False
 
 
 @app.post("/analyze")
 def analyze(req: AnalyzeRequest) -> dict:
-    meeting_id = req.meeting_id or str(uuid.uuid4())
-    result = build_workflow().apply_async()
-    return {"meeting_id": meeting_id, "task_id": result.id}
+    meeting = {
+        "title": req.title,
+        "size": req.size,
+        "should_fail": req.should_fail,
+    }
+    result = build_workflow(meeting).apply_async()
+    return {"task_id": result.id}

@@ -2,126 +2,158 @@ import asyncio
 import random
 import time
 
+SIZE_CAP_BYTES = 100 * 1024 * 1024
+MIN_DURATION_SEC = 1.0
+MAX_DURATION_SEC = 30.0
+SIGMA_FRACTION = 0.15
 
-def jitter(value=5.0, pct=0.5):
-    return value * random.uniform(1 - pct, 1 + pct)
+
+def maybe_fail(meeting):
+    if meeting.get("should_fail"):
+        raise RuntimeError(f"forced failure: {meeting.get('title')!r}")
 
 
-def byzantine(chance=0.1):
-    if chance < 0.0:
-        chance = 0.0
-    if chance > 1.0:
-        chance = 1.0
-    
+def duration(meeting):
+    size = min(max(meeting.get("size", 0), 0), SIZE_CAP_BYTES)
+    mean = MIN_DURATION_SEC + (size / SIZE_CAP_BYTES) * (
+        MAX_DURATION_SEC - MIN_DURATION_SEC
+    )
+    return max(0.1, random.gauss(mean, mean * SIGMA_FRACTION))
 
 
 class MeetGeekSDK:
     """Mock client for the MeetGeek API"""
 
     @classmethod
-    def run_transcript(cls):
-        time.sleep(jitter())
+    def run_transcript(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_speaker_diarization(cls):
-        time.sleep(jitter())
+    def run_speaker_diarization(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_language_identification(cls):
-        time.sleep(jitter())
+    def run_language_identification(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_silence_intervals(cls):
-        time.sleep(jitter())
+    def run_silence_intervals(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_update_vector_store(cls):
-        time.sleep(jitter())
+    def run_update_vector_store(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_infer_unknown_speakers(cls):
-        time.sleep(jitter())
+    def run_infer_unknown_speakers(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_template(cls):
-        time.sleep(jitter())
+    def run_template(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_summary(cls):
-        time.sleep(jitter())
+    def run_summary(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_topics_and_highlights(cls):
-        time.sleep(jitter())
+    def run_topics_and_highlights(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_keyword_highlights(cls):
-        time.sleep(jitter())
+    def run_keyword_highlights(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_kpis(cls):
-        time.sleep(jitter())
+    def run_kpis(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_kpis_summary(cls):
-        time.sleep(jitter())
+    def run_kpis_summary(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
     @classmethod
-    def run_meeting_workflows(cls):
-        time.sleep(jitter())
+    def run_meeting_workflows(cls, meeting):
+        maybe_fail(meeting)
+        time.sleep(duration(meeting))
 
 
 class AsyncMeetGeekSDK:
     """Async mock client for the MeetGeek API"""
 
     @classmethod
-    async def run_transcript(cls):
-        await asyncio.sleep(jitter())
+    async def run_transcript(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_speaker_diarization(cls):
-        await asyncio.sleep(jitter())
+    async def run_speaker_diarization(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_language_identification(cls):
-        await asyncio.sleep(jitter())
+    async def run_language_identification(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_silence_intervals(cls):
-        await asyncio.sleep(jitter())
+    async def run_silence_intervals(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_update_vector_store(cls):
-        await asyncio.sleep(jitter())
+    async def run_update_vector_store(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_infer_unknown_speakers(cls):
-        await asyncio.sleep(jitter())
+    async def run_infer_unknown_speakers(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_template(cls):
-        await asyncio.sleep(jitter())
+    async def run_template(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_summary(cls):
-        await asyncio.sleep(jitter())
+    async def run_summary(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_topics_and_highlights(cls):
-        await asyncio.sleep(jitter())
+    async def run_topics_and_highlights(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_keyword_highlights(cls):
-        await asyncio.sleep(jitter())
+    async def run_keyword_highlights(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_kpis(cls):
-        await asyncio.sleep(jitter())
+    async def run_kpis(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_kpis_summary(cls):
-        await asyncio.sleep(jitter())
+    async def run_kpis_summary(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))
 
     @classmethod
-    async def run_meeting_workflows(cls):
-        await asyncio.sleep(jitter())
+    async def run_meeting_workflows(cls, meeting):
+        maybe_fail(meeting)
+        await asyncio.sleep(duration(meeting))

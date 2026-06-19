@@ -10,6 +10,7 @@ SERVICES=(
   "meetgeek-temporal-client|implementations/temporal/client/Dockerfile|temporal-client"
   "meetgeek-temporal-transcriber|implementations/temporal/transcriber/Dockerfile|temporal-transcriber"
   "meetgeek-celery-worker|implementations/celery/worker/Dockerfile|celery-worker"
+  "meetgeek-celery-transcriber|implementations/celery/transcriber/Dockerfile|celery-transcriber"
   "meetgeek-celery-client|implementations/celery/client/Dockerfile|celery-client"
 )
 

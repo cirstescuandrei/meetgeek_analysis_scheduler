@@ -263,6 +263,94 @@
       "targets": [
         { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-temporal-transcriber\"}", "instant": true }
       ]
+    },
+    {
+      "type": "row",
+      "title": "Celery worker scaling (KEDA)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
+      "id": 105
+    },
+    {
+      "type": "timeseries",
+      "title": "celery-worker replicas",
+      "id": 18,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 59 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "desired", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "current", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "legendFormat": "available", "range": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Celery worker replicas now",
+      "id": 19,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 59 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-worker\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Celery worker HPA target",
+      "id": 20,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 63 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 100 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-worker\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "row",
+      "title": "Celery transcriber scaling (KEDA)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 67 },
+      "id": 106
+    },
+    {
+      "type": "timeseries",
+      "title": "celery-transcriber replicas",
+      "id": 21,
+      "gridPos": { "h": 8, "w": 18, "x": 0, "y": 68 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_spec_replicas{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "desired", "range": true },
+        { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "current", "range": true },
+        { "refId": "C", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "legendFormat": "available", "range": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Celery transcriber replicas now",
+      "id": 22,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 68 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "blue", "value": null }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_deployment_status_replicas_available{namespace=\"meetgeek\",deployment=\"celery-transcriber\"}", "instant": true }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Celery transcriber HPA target",
+      "id": 23,
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 72 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0, "color": { "mode": "thresholds" }, "thresholds": { "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 2 }, { "color": "red", "value": 4 }] } }, "overrides": [] },
+      "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "targets": [
+        { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-transcriber\"}", "instant": true }
+      ]
     }
   ]
 }
