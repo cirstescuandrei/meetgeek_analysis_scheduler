@@ -239,6 +239,25 @@ data:
           "targets": [
             { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-transcriber\"}", "instant": true }
           ]
+        },
+        {
+          "type": "row",
+          "title": "Durability (chaos test)",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 58 },
+          "id": 105
+        },
+        {
+          "type": "timeseries",
+          "title": "Ready Celery worker pods (watch for dips when chaos.sh kills pods)",
+          "id": 17,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 59 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (deployment) (label_replace(kube_pod_status_ready{namespace=\"meetgeek\",pod=~\"^celery-worker-.*\",condition=\"true\"}, \"deployment\", \"celery-worker\", \"pod\", \".*\"))", "legendFormat": "{{deployment}}", "range": true },
+            { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (deployment) (label_replace(kube_pod_status_ready{namespace=\"meetgeek\",pod=~\"^celery-transcriber-.*\",condition=\"true\"}, \"deployment\", \"celery-transcriber\", \"pod\", \".*\"))", "legendFormat": "{{deployment}}", "range": true }
+          ]
         }
       ]
     }
@@ -595,6 +614,25 @@ data:
           "options": { "colorMode": "value", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "targets": [
             { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "kube_horizontalpodautoscaler_status_target_metric{namespace=\"meetgeek\",horizontalpodautoscaler=\"keda-hpa-celery-transcriber\"}", "instant": true }
+          ]
+        },
+        {
+          "type": "row",
+          "title": "Durability (chaos test)",
+          "gridPos": { "h": 1, "w": 24, "x": 0, "y": 76 },
+          "id": 107
+        },
+        {
+          "type": "timeseries",
+          "title": "Ready Temporal worker pods (watch for dips when chaos.sh kills pods)",
+          "id": 24,
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 77 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "short", "min": 0, "decimals": 0, "custom": { "drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "stepAfter" } }, "overrides": [] },
+          "options": { "legend": { "displayMode": "list", "placement": "bottom" } },
+          "targets": [
+            { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (deployment) (label_replace(kube_pod_status_ready{namespace=\"meetgeek\",pod=~\"^temporal-worker-.*\",condition=\"true\"}, \"deployment\", \"temporal-worker\", \"pod\", \".*\"))", "legendFormat": "{{deployment}}", "range": true },
+            { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "editorMode": "code", "expr": "sum by (deployment) (label_replace(kube_pod_status_ready{namespace=\"meetgeek\",pod=~\"^temporal-transcriber-.*\",condition=\"true\"}, \"deployment\", \"temporal-transcriber\", \"pod\", \".*\"))", "legendFormat": "{{deployment}}", "range": true }
           ]
         }
       ]
