@@ -13,16 +13,21 @@ spec:
       labels:
         app: celery-transcriber
     spec:
+      # Match the temporal workers: on scale-down SIGTERM, Celery warm-shuts-down (finishes
+      # in-flight tasks). Give it time to drain before SIGKILL so long tasks aren't
+      # interrupted+redelivered - keeps the Temporal/Celery comparison fair. Cap, not a fixed
+      # wait: the pod exits as soon as its tasks finish.
+      terminationGracePeriodSeconds: 930
       initContainers:
-        - name: wait-for-redis
+        - name: wait-for-rabbitmq
           image: busybox:1.36
-          command: ["sh", "-c", "until nc -z redis 6379; do echo waiting for redis; sleep 2; done"]
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done"]
       containers:
         - name: celery-transcriber
           image: meetgeek-celery-transcriber:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: CELERY_BROKER_URL
-              value: redis://redis:6379/0
+              value: amqp://meetgeek:meetgeek@rabbitmq:5672//
             - name: CELERY_RESULT_BACKEND
               value: redis://redis:6379/0

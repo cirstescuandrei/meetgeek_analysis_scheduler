@@ -23,4 +23,9 @@ app.conf.task_routes = {
     name: {"queue": TRANSCRIBER_TASK_QUEUE} for name in TRANSCRIBER_TASKS
 }
 app.conf.worker_prefetch_multiplier = 1
+# Broker is RabbitMQ (amqp): acks are connection-based, so a task may run for as long
+# as RabbitMQ's consumer_timeout (30 min default) with no risk of timeout-based
+# redelivery, while a crashed worker's connection drop requeues its in-flight task
+# immediately. acks_late + reject_on_worker_lost give at-least-once with fast recovery.
 app.conf.task_acks_late = True
+app.conf.task_reject_on_worker_lost = True

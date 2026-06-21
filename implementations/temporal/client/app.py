@@ -34,8 +34,8 @@ app = FastAPI(lifespan=lifespan)
 class AnalyzeRequest(BaseModel):
     title: str = "untitled"
     size: int = 0
-    should_fail: bool = False
-    mode: Literal["sync", "async"] = "sync"
+    failure_rate: float = 0.0
+    mode: Literal["sync", "async"] = "async"
 
 
 @app.post("/analyze")
@@ -44,7 +44,7 @@ async def analyze(req: AnalyzeRequest, request: Request) -> dict:
     meeting: MeetingInput = {
         "title": req.title,
         "size": req.size,
-        "should_fail": req.should_fail,
+        "failure_rate": req.failure_rate,
     }
     handle = await client.start_workflow(
         WORKFLOWS[req.mode].run,

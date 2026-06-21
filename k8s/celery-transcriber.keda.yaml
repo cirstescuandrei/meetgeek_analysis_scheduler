@@ -7,7 +7,7 @@ spec:
   scaleTargetRef:
     name: celery-transcriber
   minReplicaCount: 1
-  maxReplicaCount: 5
+  maxReplicaCount: 10
   advanced:
     horizontalPodAutoscalerConfig:
       behavior:
@@ -18,16 +18,17 @@ spec:
               value: 2
               periodSeconds: 15
         scaleDown:
-          stabilizationWindowSeconds: 60
+          stabilizationWindowSeconds: 300
           policies:
             - type: Pods
               value: 1
               periodSeconds: 30
   triggers:
-    - type: redis
+    - type: rabbitmq
       metadata:
-        address: redis.meetgeek.svc.cluster.local:6379
-        listName: meeting-transcription
-        listLength: "4"
-        activationListLength: "1"
-        databaseIndex: "0"
+        protocol: amqp
+        host: amqp://meetgeek:meetgeek@rabbitmq.meetgeek.svc.cluster.local:5672/
+        queueName: meeting-transcription
+        mode: QueueLength
+        value: "4"
+        activationValue: "1"

@@ -1,6 +1,9 @@
+import time
+
 from meetgeek.sdk import MeetGeekSDK
 
 from implementations.celery.app import app
+from implementations.celery.metrics import WORKFLOW_E2E
 
 # Mirrors Temporal's RetryPolicy(maximum_attempts=5): 1 initial + 4 retries.
 RETRY_OPTS = dict(
@@ -75,3 +78,8 @@ def kpis_summary(meeting: dict) -> None:
 @app.task(**RETRY_OPTS)
 def meeting_workflows(meeting: dict) -> None:
     MeetGeekSDK.run_meeting_workflows(meeting)
+    # Final task: record whole-workflow latency (submit -> now) for the harness, mirroring
+    # Temporal's native e2e-latency histogram. submitted_at is stamped by the client.
+    submitted_at = meeting.get("submitted_at")
+    if submitted_at:
+        WORKFLOW_E2E.observe(time.time() - submitted_at)

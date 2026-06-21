@@ -7,7 +7,7 @@ spec:
   scaleTargetRef:
     name: temporal-worker
   minReplicaCount: 1
-  maxReplicaCount: 5
+  maxReplicaCount: 20
   advanced:
     horizontalPodAutoscalerConfig:
       behavior:
@@ -18,7 +18,7 @@ spec:
               value: 2
               periodSeconds: 15
         scaleDown:
-          stabilizationWindowSeconds: 60
+          stabilizationWindowSeconds: 300
           policies:
             - type: Pods
               value: 1

@@ -14,16 +14,16 @@ spec:
         app: celery-client
     spec:
       initContainers:
-        - name: wait-for-redis
+        - name: wait-for-rabbitmq
           image: busybox:1.36
-          command: ["sh", "-c", "until nc -z redis 6379; do echo waiting for redis; sleep 2; done"]
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done"]
       containers:
         - name: celery-client
           image: meetgeek-celery-client:latest
           imagePullPolicy: IfNotPresent
           env:
             - name: CELERY_BROKER_URL
-              value: redis://redis:6379/0
+              value: amqp://meetgeek:meetgeek@rabbitmq:5672//
             - name: CELERY_RESULT_BACKEND
               value: redis://redis:6379/0
           ports:

@@ -30,9 +30,16 @@ with workflow.unsafe.imports_passed_through():
         async_topics_with_highlights,
         async_vector_store,
     )
-    from implementations.temporal.shared import TRANSCRIBER_TASK_QUEUE
+    from implementations.temporal.shared import (
+        HEARTBEAT_TIMEOUT,
+        TRANSCRIBER_TASK_QUEUE,
+    )
 
-TIMEOUT = timedelta(minutes=5)
+# Generous: real diarization runs to ~700s at 200MB.
+TIMEOUT = timedelta(minutes=30)
+# HEARTBEAT_TIMEOUT comes from shared.py so the server-side timeout matches the
+# worker/activity-side send interval. If no heartbeat arrives within it, the activity is
+# rescheduled on a live worker (fast recovery, decoupled from start_to_close_timeout).
 RETRY_POLICY = RetryPolicy(maximum_attempts=5)
 
 
@@ -46,6 +53,7 @@ class MeetingAnalysisWorkflow:
                     fn,
                     meeting,
                     start_to_close_timeout=TIMEOUT,
+                    heartbeat_timeout=HEARTBEAT_TIMEOUT,
                     task_queue=queue,
                     retry_policy=RETRY_POLICY,
                 )
@@ -53,6 +61,7 @@ class MeetingAnalysisWorkflow:
                 fn,
                 meeting,
                 start_to_close_timeout=TIMEOUT,
+                heartbeat_timeout=HEARTBEAT_TIMEOUT,
                 retry_policy=RETRY_POLICY,
             )
 
@@ -106,6 +115,7 @@ class AsyncMeetingAnalysisWorkflow:
                     fn,
                     meeting,
                     start_to_close_timeout=TIMEOUT,
+                    heartbeat_timeout=HEARTBEAT_TIMEOUT,
                     task_queue=queue,
                     retry_policy=RETRY_POLICY,
                 )
@@ -113,6 +123,7 @@ class AsyncMeetingAnalysisWorkflow:
                 fn,
                 meeting,
                 start_to_close_timeout=TIMEOUT,
+                heartbeat_timeout=HEARTBEAT_TIMEOUT,
                 retry_policy=RETRY_POLICY,
             )
 

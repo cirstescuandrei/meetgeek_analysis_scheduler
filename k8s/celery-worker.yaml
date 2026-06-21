@@ -13,16 +13,41 @@ spec:
       labels:
         app: celery-worker
     spec:
+      # Match the temporal workers: on scale-down SIGTERM, Celery warm-shuts-down (finishes
+      # in-flight tasks). Give it time to drain before SIGKILL so long tasks aren't
+      # interrupted+redelivered - keeps the Temporal/Celery comparison fair. Cap, not a fixed
+      # wait: the pod exits as soon as its tasks finish.
+      terminationGracePeriodSeconds: 930
       initContainers:
-        - name: wait-for-redis
+        - name: wait-for-rabbitmq
           image: busybox:1.36
-          command: ["sh", "-c", "until nc -z redis 6379; do echo waiting for redis; sleep 2; done"]
+          command: ["sh", "-c", "until nc -z rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done"]
       containers:
         - name: celery-worker
           image: meetgeek-celery-worker:latest
           imagePullPolicy: IfNotPresent
+          ports:
+            - name: metrics
+              containerPort: 9000
           env:
             - name: CELERY_BROKER_URL
-              value: redis://redis:6379/0
+              value: amqp://meetgeek:meetgeek@rabbitmq:5672//
             - name: CELERY_RESULT_BACKEND
               value: redis://redis:6379/0
+            - name: METRICS_PORT
+              value: "9000"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: celery-worker
+  namespace: meetgeek
+spec:
+  selector:
+    app: celery-worker
+  ports:
+    # Custom workflow e2e-latency histogram (implementations/celery/metrics.py), scraped
+    # by Prometheus - the Celery analog of the temporal-worker:9000 SDK metrics endpoint.
+    - name: metrics
+      port: 9000
+      targetPort: 9000

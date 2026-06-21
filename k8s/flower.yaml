@@ -17,7 +17,12 @@ spec:
       containers:
         - name: flower
           image: mher/flower:2.0.1
-          args: ["celery", "--broker=redis://redis:6379/0", "flower", "--port=5555"]
+          args:
+            - celery
+            - --broker=amqp://meetgeek:meetgeek@rabbitmq:5672//
+            - flower
+            - --broker_api=http://meetgeek:meetgeek@rabbitmq:15672/api/
+            - --port=5555
           env:
             - name: FLOWER_UNAUTHENTICATED_API
               value: "true"

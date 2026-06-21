@@ -41,6 +41,12 @@ for entry in "${selected[@]}"; do
   docker build -f "$dockerfile" -t "$image:latest" .
   echo ">> loading $image:latest into minikube"
   docker save "$image:latest" | docker exec -i minikube docker load
+  # Apply the manifest so spec changes (env, terminationGracePeriodSeconds, resources, etc.)
+  # take effect - a rebuild + rollout-restart alone does not pick these up.
+  echo ">> applying k8s/$deployment.yaml"
+  kubectl apply -f "k8s/$deployment.yaml" -n "$NAMESPACE"
+  # rollout-restart forces new pods to pick up the freshly loaded :latest image (the pod
+  # template is unchanged, so apply alone wouldn't restart them).
   echo ">> restarting deployment/$deployment"
   kubectl rollout restart "deployment/$deployment" -n "$NAMESPACE"
 done
