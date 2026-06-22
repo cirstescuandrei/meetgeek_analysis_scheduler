@@ -2,7 +2,6 @@ import asyncio
 import contextlib
 import contextvars
 import threading
-import time
 from typing import TypedDict
 
 from temporalio import activity
@@ -82,17 +81,15 @@ async def heartbeating_async(every: float = HEARTBEAT_EVERY_S):
 # In this simulation the single blocking call inside the wrapper is a sleep modelling the
 # stage's measured duration; in production it is the real Whisper / OpenAI call (above).
 def run_sync(meeting, model, api):
-    sdk.maybe_fail(meeting)
     secs = sdk.api_duration(meeting, model) if api else sdk.duration(meeting, model)
     with heartbeating():
-        time.sleep(secs)
+        sdk.run_stage(meeting, secs)
 
 
 async def run_async(meeting, model, api):
-    sdk.maybe_fail(meeting)
     secs = sdk.api_duration(meeting, model) if api else sdk.duration(meeting, model)
     async with heartbeating_async():
-        await asyncio.sleep(secs)
+        await sdk.run_stage_async(meeting, secs)
 
 
 # --- transcription (Whisper, sync, near-normal duration) ---
