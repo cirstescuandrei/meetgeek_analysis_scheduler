@@ -22,6 +22,7 @@ import csv
 import json
 import os
 import random
+import re
 import subprocess
 import sys
 import time
@@ -131,13 +132,16 @@ def client_url(target):
 
 
 def submit(url, payload):
+    """Submit one workflow. Returns the id used to track completion (Celery: the chain's
+    result id; Temporal: the workflow id), or None on error."""
     data = json.dumps(payload).encode()
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status == 200
+            body = json.loads(r.read().decode())
+            return body.get("task_id") or body.get("workflow_id")
     except Exception:
-        return False
+        return None
 
 
 def completed_query(target, mode):
@@ -152,6 +156,57 @@ def failed_query(target, mode):
         wf = "AsyncMeetingAnalysisWorkflow" if mode == "async" else "MeetingAnalysisWorkflow"
         return f'sum(temporal_workflow_failed{{workflow_type="{wf}"}})'
     return 'sum(celery_task_failed_total{exception!=""})'
+
+
+def temporal_count(wf, status):
+    """Authoritative count of workflows in a terminal status from the Temporal server's
+    visibility store. Robust to worker autoscaling: the per-worker SDK counters in
+    Prometheus undercount because workers are scraped through a load-balanced Service and
+    scaled-down pods take their local counts with them."""
+    out = sh(f"kubectl exec -n {NS} deploy/temporal -c temporal -- "
+             f"temporal workflow count "
+             f"--address temporal.{NS}.svc.cluster.local:7233 --namespace default "
+             f"--query \"WorkflowType='{wf}' AND ExecutionStatus='{status}'\" 2>/dev/null")
+    m = re.search(r"Total:\s*(\d+)", out)
+    return float(m.group(1)) if m else 0.0
+
+
+def completed_count(target, wf):
+    """Number of completed workflows. Temporal: server visibility. Celery: the central
+    celery-exporter counter, which already aggregates across all workers."""
+    if target == "temporal":
+        return temporal_count(wf, "Completed")
+    return promql(completed_query(target, None))
+
+
+def failed_count(target, wf):
+    if target == "temporal":
+        return temporal_count(wf, "Failed")
+    return promql(failed_query(target, None))
+
+
+def celery_results(ids):
+    """Count terminal Celery chains (succeeded, failed) by their final-task ids in the
+    durable Redis result backend. Robust to worker autoscaling, unlike the per-hostname
+    celery-exporter counters whose sum drops when scaled-down workers' series disappear."""
+    if not ids:
+        return 0, 0
+    keys = " ".join(f"celery-task-meta-{i}" for i in ids)
+    out = sh(f"kubectl exec -n {NS} deploy/redis -- redis-cli mget {keys} 2>/dev/null")
+    ok = bad = 0
+    for line in out.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            status = json.loads(line).get("status")
+        except Exception:
+            continue
+        if status == "SUCCESS":
+            ok += 1
+        elif status in ("FAILURE", "REVOKED"):
+            bad += 1
+    return ok, bad
 
 
 def main():
@@ -195,20 +250,23 @@ def main():
     print(f">> {target} | count={count} size={size_label} mode={args.mode} "
           f"failure_rate={args.fail_rate} | url={url}")
 
-    comp_q, fail_q = completed_query(target, args.mode), failed_query(target, args.mode)
-    # Pre-flight: wait until the completed counter stops moving, so stragglers from
-    # prior runs don't contaminate this batch's baseline / completion detection.
-    prev, stable = promql(comp_q), 0
-    while stable < 3:
-        time.sleep(4)
-        cur = promql(comp_q)
-        stable = stable + 1 if cur == prev else 0
-        if cur != prev:
-            print(f"   waiting for cluster to quiesce (completed={int(cur)})")
-        prev = cur
-    base_completed = prev
-    base_failed = promql(fail_q)
     wf = "AsyncMeetingAnalysisWorkflow" if args.mode == "async" else "MeetingAnalysisWorkflow"
+    fr_active = bool(args.fail_rate) and float(args.fail_rate) > 0
+    base_completed = base_failed = 0
+    if target == "temporal":
+        # Pre-flight: wait until the visibility count stops moving, so stragglers from prior
+        # runs don't contaminate this batch's baseline / completion detection. Celery tracks
+        # this run's own chain ids, so it needs no baseline.
+        prev, stable = completed_count(target, wf), 0
+        while stable < 3:
+            time.sleep(4)
+            cur = completed_count(target, wf)
+            stable = stable + 1 if cur == prev else 0
+            if cur != prev:
+                print(f"   waiting for cluster to quiesce (completed={int(cur)})")
+            prev = cur
+        base_completed = prev
+        base_failed = failed_count(target, wf)
     base_buckets = ebuckets(target, wf)
 
     payloads = []
@@ -221,18 +279,46 @@ def main():
 
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=args.concurrency) as ex:
-        accepted = sum(ex.map(lambda p: submit(url, p), payloads))
+        ids = [r for r in ex.map(lambda p: submit(url, p), payloads) if r]
+    accepted = len(ids)
     print(f">> submitted {accepted}/{count} in {time.time()-t0:.1f}s; waiting for completion...")
 
-    # Failures are now probabilistic (per-activity), so wait for every workflow to reach
-    # a TERMINAL state: completed + failed >= count (failed = workflow-level for temporal;
-    # ~one permanently-failed task per aborted chain for celery).
+    # Wait for every meeting to reach a terminal state, then record (completed, failed) from
+    # durable sources that survive worker autoscaling.
+    #   Temporal -> server visibility deltas.
+    #   Celery   -> successes from the Redis result backend (this run's chain ids). A chain
+    #               that aborts mid-way leaves no result on its final id, so failures cannot
+    #               be read per-chain; instead the run is terminal once the broker queues
+    #               drain (no ready or in-flight tasks), and the remainder counts as failed.
+    def broker_idle():
+        out = sh(f"kubectl exec -n {NS} deploy/rabbitmq -- "
+                 f"rabbitmqctl list_queues name messages 2>/dev/null")
+        pending = 0
+        for line in out.splitlines():
+            p = line.split()
+            if len(p) == 2 and p[0] in ("meeting-transcription", "meeting-analysis"):
+                pending += int(p[1]) if p[1].isdigit() else 0
+        return pending == 0
+
     t_end = None
+    completed = failed = idle = 0
     while time.time() - t0 < args.timeout:
-        done = (promql(comp_q) - base_completed) + (promql(fail_q) - base_failed)
+        if target == "temporal":
+            completed = completed_count(target, wf) - base_completed
+            failed = (failed_count(target, wf) - base_failed) if fr_active else 0
+            terminal = completed + failed >= count
+        else:
+            completed, _ = celery_results(ids)
+            if completed >= count:
+                failed, terminal = 0, True
+            else:
+                idle = idle + 1 if broker_idle() else 0
+                terminal = idle >= 4   # ~12s with no pending or in-flight tasks
+                failed = count - completed if terminal else 0
+        done = completed + failed
         sys.stdout.write(f"\r   terminal {int(done)}/{count}   ({time.time()-t0:.0f}s)")
         sys.stdout.flush()
-        if done >= count:
+        if terminal:
             t_end = time.time()
             break
         time.sleep(3)
@@ -242,8 +328,6 @@ def main():
         print(f"!! TIMEOUT after {args.timeout}s - recording partial results")
 
     wall = t_end - t0
-    completed = promql(comp_q) - base_completed
-    failed = promql(fail_q) - base_failed
     window = int(wall) + 15
 
     peak_worker = promql(
