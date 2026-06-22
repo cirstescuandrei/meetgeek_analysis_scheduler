@@ -7,7 +7,7 @@ spec:
   scaleTargetRef:
     name: celery-transcriber
   minReplicaCount: 1
-  maxReplicaCount: 10
+  maxReplicaCount: 20
   advanced:
     horizontalPodAutoscalerConfig:
       behavior:

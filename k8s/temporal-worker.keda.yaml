@@ -7,7 +7,7 @@ spec:
   scaleTargetRef:
     name: temporal-worker
   minReplicaCount: 1
-  maxReplicaCount: 20
+  maxReplicaCount: 40
   advanced:
     horizontalPodAutoscalerConfig:
       behavior:
