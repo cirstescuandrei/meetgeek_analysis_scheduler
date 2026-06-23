@@ -10,14 +10,6 @@ data:
         static_configs:
           - targets: ["temporal:9091"]
 
-      - job_name: temporal-worker
-        static_configs:
-          - targets: ["temporal-worker:9000"]
-
-      - job_name: temporal-transcriber
-        static_configs:
-          - targets: ["temporal-transcriber:9000"]
-
       - job_name: kube-state-metrics
         static_configs:
           - targets: ["kube-state-metrics.kube-system.svc.cluster.local:8080"]
@@ -26,9 +18,29 @@ data:
         static_configs:
           - targets: ["celery-exporter:9808"]
 
-      - job_name: celery-worker
-        static_configs:
-          - targets: ["celery-worker:9000"]
+      # Per-pod discovery for the worker pools. Scraping through a Service only hits one
+      # pod, so per-worker histograms (end-to-end latency) and counters are incomplete once
+      # a pool scales out. Discovering each pod and summing by (le) recovers the full
+      # histogram. job keeps the app name so existing job="temporal-worker" queries match.
+      - job_name: meetgeek-workers
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [meetgeek]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            regex: temporal-worker|temporal-transcriber|celery-worker
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_container_port_number]
+            regex: "9000"
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_phase]
+            regex: Running
+            action: keep
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: job
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
 kind: ConfigMap
 metadata:
   name: prometheus-config
